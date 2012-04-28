@@ -25,6 +25,8 @@
 #include "list.h"
 #include "tsp.h"
 
+#include "GACoordinator.h"
+
 using namespace std;
 
 int myrank, NumProcs, NumCities;
@@ -276,12 +278,21 @@ int main(int argc, char *argv[])
   // and bcast, or initialized from a file in a shared file system.
   Fill_Dist();  // process 0 read the data and broadcast it to the others
 
-  if (myrank==0) 
-    Coordinator();
-  else
-    Worker();
+//  if (myrank==0)
+//    Coordinator();
+//  else
+//    Worker();
+
+  if (myrank == 0) {
+	  GACoordinator coordinator = GACoordinator(NumCities, Dist);
+	  coordinator.start();
+  } else {
+
+  }
   
   MPI_Finalize();
+
+  printf("Finished");
   return 0;
 }
 
