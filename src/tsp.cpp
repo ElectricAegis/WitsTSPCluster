@@ -26,6 +26,13 @@
 #include "tsp.h"
 
 #include "GACoordinator.h"
+#include "GAPath.h"
+#include <boost/mpi/environment.hpp>
+#include <boost/mpi/communicator.hpp>
+#include <boost/mpi/skeleton_and_content.hpp>
+#include <vector>
+
+namespace mpi = boost::mpi;
 
 using namespace std;
 
@@ -264,17 +271,21 @@ void Worker ()
 
 int main(int argc, char *argv[])
 {
-  MPI_Init (&argc, &argv);
-  MPI_Comm_rank(MPI_COMM_WORLD, &myrank);
-  MPI_Comm_size(MPI_COMM_WORLD, &NumProcs);
+	mpi::environment env(argc, argv);
+	mpi::communicator world;
+	myrank = world.rank();
+	NumProcs = world.size();
+//  MPI_Init (&argc, &argv);
+//  MPI_Comm_rank(MPI_COMM_WORLD, &myrank);
+//  MPI_Comm_size(MPI_COMM_WORLD, &NumProcs);
 
   if (NumProcs<2) {
     printf("At least 2 processes are required\n");
     exit(-1);
-  }  
+  }
 
 
-  // Initialize distance matrix. Ususally done by one process 
+  // Initialize distance matrix. Ususally done by one process
   // and bcast, or initialized from a file in a shared file system.
   Fill_Dist();  // process 0 read the data and broadcast it to the others
 
@@ -284,15 +295,26 @@ int main(int argc, char *argv[])
 //    Worker();
 
   if (myrank == 0) {
-	  GACoordinator coordinator = GACoordinator(NumCities, Dist);
+	  GACoordinator coordinator = GACoordinator(NumCities, Dist, 20);
 	  coordinator.start();
+	  std::vector<GAPath> population = coordinator.getPopulation();
+	  world.send(1 /* target */, 1 /* count */, mpi::skeleton(population));
+	  world.send(1 /* target */, 1 /* count */, mpi::get_content(population));
   } else {
-
+	  std::vector<GAPath> population;
+	  world.recv(0 /* source */, 1 /* count */, mpi::skeleton(population));
+	  world.recv(0 /* source */, 1 /* count */, mpi::get_content(population));
+	  printf("Population on worker: %d\n", NumCities);
+	  for( int i = 0 ; i<20 ; i++ )
+	  {
+		 for( int j=0 ; j<NumCities ; j++ ) {
+		   int temp = population.at(i).path.at(j);
+			printf("%5d",  temp);
+		 }
+		 printf("\n");
+	  }
   }
-  
-  MPI_Finalize();
 
-  printf("Finished");
   return 0;
 }
 

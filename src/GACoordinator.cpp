@@ -7,53 +7,40 @@
 
 #include "GACoordinator.h"
 
-#include <cstdlib>	// for srand and rand
-#include <ctime>	// for time
-#include <memory.h>
 #include <stdio.h>
 
 //#include "tsp.h"
 
-GACoordinator::GACoordinator(int numCities, int *DistMatrix) {
+GACoordinator::GACoordinator(int numCities, int *DistMatrix, int populationSize) {
 	// TODO Auto-generated constructor stub
 	_numCities = numCities;
 	_DistMatrix = DistMatrix;
+	_populationSize = populationSize;
 }
 
 GACoordinator::~GACoordinator() {
 	// TODO Auto-generated destructor stub
 }
 
+std::vector<GAPath> GACoordinator::getPopulation() {
+	return _population;
+}
+
 void GACoordinator::start() {
 	//-- Generate Population
-	int popSize = 50;
-	int population[popSize][_numCities];
-	srand(time(0));
-
-	int tempPath[_numCities];
-
-	for (int i = 0; i < _numCities; ++i) {
-			tempPath[i] = i;
-	}
-
-	for (int j = 0; j < popSize; ++j) {
-		//-- Shuffle elements by randomly exchanging each with one other
-
-		for (int i = 0; i < (_numCities-1); i++) {
-			int r = i + (rand() % (_numCities-i));	// random remaining position
-			int temp = tempPath[i];
-			tempPath[i] = tempPath[r];
-			tempPath[r] = temp;
-		}
-
-		 memcpy (population[j], tempPath, _numCities*sizeof(int));
+	_population.clear();
+	for (int j = 0; j < _populationSize; ++j) {
+		GAPath tempPath = GAPath(_numCities);
+		_population.push_back(tempPath);
 	}
 
     printf("Population: %d\n", _numCities);
-    for( int i = 0 ; i<popSize ; i++ )
+    for( int i = 0 ; i<_populationSize ; i++ )
     {
-       for( int j=0 ; j<_numCities ; j++ )
-          printf("%5d",  population[i][j]);
+       for( int j=0 ; j<_numCities ; j++ ) {
+    	   int temp = _population.at(i).path.at(j);
+          printf("%5d",  temp);
+       }
        printf("\n");
     }
 }
