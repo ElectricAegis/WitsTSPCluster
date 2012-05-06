@@ -13,6 +13,8 @@
 #include <boost/serialization/vector.hpp>
 //const unsigned int MAXCITIES = 25;
 
+enum {FINISH_TAG, CONT_TAG, CALC_DIST_TAG, MUTATE_TAG};
+
 class GAPath {
 public:
 	friend class boost::serialization::access;
@@ -26,7 +28,6 @@ public:
 	}
 	//public attributes
 	int length;			// length of path
-	//int path[25];
 	std::vector<int> path;
 	int numCities;
 	static bool isSeeded;
@@ -34,8 +35,15 @@ public:
 	//public methods
 	GAPath(int numberCities = 0);
 	virtual ~GAPath();
+	int calculatePathLength(int *distanceMatrix);
+	void insertionPoints(int &first, int &last);
+	void swapPoints(int first, int last);
+	void flipPoints(int first, int last);
+	void slidePoints(int first, int last);
 
 //private:
 };
+
+//void randomizeArray(std::vector<int> &array);
 
 #endif /* GAPATH_H_ */

@@ -17,7 +17,7 @@ public:
 	GACoordinator(int numCities, int *DistMatrix, int populationSize);
 	virtual ~GACoordinator();
 
-	void start();
+	void start(int iterations = 2);
 	std::vector<GAPath> getPopulation();
 
 private:
@@ -25,6 +25,7 @@ private:
 	int *_DistMatrix;
 	std::vector<GAPath> _population;
 	int _populationSize;
+	GAPath _shortestPath;
 };
 
 #endif /* GACOORDINATOR_H_ */

@@ -26,6 +26,7 @@
 #include "tsp.h"
 
 #include "GACoordinator.h"
+#include "GAWorker.h"
 #include "GAPath.h"
 #include <boost/mpi/environment.hpp>
 #include <boost/mpi/communicator.hpp>
@@ -296,23 +297,14 @@ int main(int argc, char *argv[])
 
   if (myrank == 0) {
 	  GACoordinator coordinator = GACoordinator(NumCities, Dist, 20);
-	  coordinator.start();
-	  std::vector<GAPath> population = coordinator.getPopulation();
-	  world.send(1 /* target */, 1 /* count */, mpi::skeleton(population));
-	  world.send(1 /* target */, 1 /* count */, mpi::get_content(population));
+	  printf("coordinator starting \n");
+	  coordinator.start(10);
+	  printf("coordinator finishing\n");
   } else {
-	  std::vector<GAPath> population;
-	  world.recv(0 /* source */, 1 /* count */, mpi::skeleton(population));
-	  world.recv(0 /* source */, 1 /* count */, mpi::get_content(population));
-	  printf("Population on worker: %d\n", NumCities);
-	  for( int i = 0 ; i<20 ; i++ )
-	  {
-		 for( int j=0 ; j<NumCities ; j++ ) {
-		   int temp = population.at(i).path.at(j);
-			printf("%5d",  temp);
-		 }
-		 printf("\n");
-	  }
+	  GAWorker worker = GAWorker(NumCities, Dist);
+	  printf("worker %d starting\n",myrank);
+	  worker.start();
+	  printf("worker %d finishing\n",myrank);
   }
 //  printf("\n");
   return 0;
