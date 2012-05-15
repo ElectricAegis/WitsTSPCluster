@@ -31,15 +31,15 @@ void GAWorker::start() {
 		world.recv(0 /* source */, CALC_DIST_TAG /* count */, mpi::skeleton(population));
 		world.recv(0 /* source */, CALC_DIST_TAG /* count */, mpi::get_content(population));
 
-		printf("Population on worker %d: %d\n", world.rank(), population.size());
-		for( int i = 0 ; i<population.size() ; i++ )
-		{
-		 for( int j=0 ; j<_numCities ; j++ ) {
-		   int temp = population.at(i).path.at(j);
-			printf("%5d",  temp);
-		 }
-		 printf("\n");
-		}
+//		printf("Population on worker %d: %d\n", world.rank(), population.size());
+//		for( int i = 0 ; i<population.size() ; i++ )
+//		{
+//		 for( int j=0 ; j<_numCities ; j++ ) {
+//		   int temp = population.at(i).path.at(j);
+//			printf("%5d",  temp);
+//		 }
+//		 printf("\n");
+//		}
 
 		int shortestDistance = INT_MAX;
 		int shortestDistanceIndex = 0;

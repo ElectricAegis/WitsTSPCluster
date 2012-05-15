@@ -40,6 +40,7 @@ GAPath::~GAPath() {
 int GAPath::calculatePathLength(int *distanceMatrix){
 	int d = 0;
 	for (int i = 0; i < path.size()-1; ++i) {
+		//row then column
 		d += distanceMatrix[path.at(i)*numCities + path.at(i+1)];
 	}
 	//length =  std::accumulate(path.begin(), path.end(),0);

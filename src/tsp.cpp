@@ -31,6 +31,7 @@
 #include <boost/mpi/environment.hpp>
 #include <boost/mpi/communicator.hpp>
 #include <boost/mpi/skeleton_and_content.hpp>
+#include <boost/mpi/timer.hpp>
 #include <vector>
 
 #include "Requester.h"
@@ -321,6 +322,8 @@ int main(int argc, char *argv[])
 		mpi::communicator world;
 		myrank = world.rank();
 		NumProcs = world.size();
+//		mpi::timer
+		mpi::timer myTimer;
 	//  MPI_Init (&argc, &argv);
 	//  MPI_Comm_rank(MPI_COMM_WORLD, &myrank);
 	//  MPI_Comm_size(MPI_COMM_WORLD, &NumProcs);
@@ -336,7 +339,7 @@ int main(int argc, char *argv[])
 
 	  if (myrank == 0) {
 			//Requester
-			string webServerAddress = "146.141.125.129";
+			string webServerAddress = "192.168.1.167";
 			Requester myRequester(webServerAddress);
 			myRequester.connectToWebServer();
 
@@ -350,7 +353,8 @@ int main(int argc, char *argv[])
 	  }
 	  // Initialize distance matrix. Ususally done by one process
 	  // and bcast, or initialized from a file in a shared file system.
-	  Fill_Dist_Vect(distanceMatrix);  // process 0 read the data and broadcast it to the others
+//	  Fill_Dist_Vect(distanceMatrix);  // process 0 read the data and broadcast it to the others
+	  Fill_Dist();
 
 	//  if (myrank==0)
 	//    Coordinator();
@@ -359,33 +363,34 @@ int main(int argc, char *argv[])
 
 	  if (myrank == 0) {
 
-		  GACoordinator coordinator = GACoordinator(NumCities, Dist, 20);
+		  GACoordinator coordinator = GACoordinator(NumCities, Dist, 40000);
 		  printf("coordinator starting \n");
 		  coordinator.start(10);
 		  printf("coordinator finishing\n");
+		  printf("Time: %f\n", myTimer.elapsed());
 
-		  	//-------Algorithm-------
-//		  	vector<unsigned int> bestRoute; // Starts at 0 being the first city in the distance matrix
-		  	GAPath resultPath = coordinator.getShortesPath();
-		  	vector<unsigned int> bestRoute = resultPath.path;
-//		  	bestRoute.push_back(0);
-//		  	bestRoute.push_back(2);
-//		  	bestRoute.push_back(1);
-//		  	bestRoute.push_back(3);
-		  	unsigned int optimalPathLength = resultPath.length;
-		  	//-----------------------
-
-		  	//Generator result
-		  	vector<unsigned int> route;
-		  	ResultGenerator myGenerator(optimalPathLength, cityNames);
-		  	myGenerator.setRoute(bestRoute);
-		  //	myGenerator.constructJSONSwebServerAddresstream();
-		  	myGenerator.constructJSONStream();
-		  	myGenerator.createJSONFile();
-
-		  	//Send the result to the Web-server
-		  	DataSender mySender("146.141.125.129");
-		  	mySender.makeRequest();
+//		  	//-------Algorithm-------
+////		  	vector<unsigned int> bestRoute; // Starts at 0 being the first city in the distance matrix
+//		  	GAPath resultPath = coordinator.getShortesPath();
+//		  	vector<unsigned int> bestRoute = resultPath.path;
+////		  	bestRoute.push_back(0);
+////		  	bestRoute.push_back(2);
+////		  	bestRoute.push_back(1);
+////		  	bestRoute.push_back(3);
+//		  	unsigned int optimalPathLength = resultPath.length;
+//		  	//-----------------------
+//
+//		  	//Generator result
+//		  	vector<unsigned int> route;
+//		  	ResultGenerator myGenerator(optimalPathLength, cityNames);
+//		  	myGenerator.setRoute(bestRoute);
+//		  //	myGenerator.constructJSONSwebServerAddresstream();
+//		  	myGenerator.constructJSONStream();
+//		  	myGenerator.createJSONFile();
+//
+//		  	//Send the result to the Web-server
+//		  	DataSender mySender("192.168.1.167");
+//		  	mySender.makeRequest();
 
 	  } else {
 		  GAWorker worker = GAWorker(NumCities, Dist);
