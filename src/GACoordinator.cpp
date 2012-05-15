@@ -6,6 +6,7 @@
  */
 
 #include "GACoordinator.h"
+#include "GAPath.h"
 
 #include <stdio.h>
 #include <boost/mpi/communicator.hpp>
@@ -16,7 +17,6 @@ namespace mpi = boost::mpi;
 //#include "tsp.h"
 
 GACoordinator::GACoordinator(int numCities, int *DistMatrix, int populationSize) {
-	// TODO Auto-generated constructor stub
 	_numCities = numCities;
 	_DistMatrix = DistMatrix;
 	// ensure population is devisable by 4, due to for mutation strategies;
