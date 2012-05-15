@@ -19,6 +19,7 @@ public:
 
 	void start(int iterations = 2);
 	std::vector<GAPath> getPopulation();
+	GAPath getShortesPath() { return _shortestPath; }
 
 private:
 	int _numCities;

@@ -203,7 +203,42 @@ void Coordinator ()
 	Shortest.Print();
 }
 
+void Fill_Dist_Vect( vector<vector<unsigned int> > distanceMatrix )
+{
 
+	if (myrank == 0)    {
+		NumCities = distanceMatrix.size();
+	}
+
+	// global operation, all processes must call it
+	MPI_Bcast( &NumCities, 1, MPI_INT, 0, MPI_COMM_WORLD);
+	assert(NumCities<=MAXCITIES);
+
+	Dist = new int[NumCities*NumCities];
+
+	if (myrank == 0)
+		for( int i = 0 ; i<NumCities ; i++ )
+			for( int j = 0 ; j<NumCities ; j++ )
+				Dist[i*NumCities + j] = distanceMatrix.at(i).at(j);
+
+	// global operation, all processes must call it
+	MPI_Bcast( Dist,                   // the buffer
+			NumCities*NumCities,    // number of elements
+			MPI_INT,                // type of elements
+			0,                      // the root for the broadcast
+			MPI_COMM_WORLD);        // the most used communicator
+
+	if (myrank == 0)        // print the matrix for debugging
+	{
+		printf("Number of cities: %d\n", NumCities);
+		for( int i = 0 ; i<NumCities ; i++ )
+		{
+			for( int j=0 ; j<NumCities ; j++ )
+				printf("%5d", Dist[i*NumCities+j] );
+			printf("\n");
+		}
+	}
+}
 
 void Worker ()
 { 
@@ -282,74 +317,83 @@ void Worker ()
 
 int main(int argc, char *argv[])
 {
-	//	mpi::environment env(argc, argv);
-	//	mpi::communicator world;
-	//	myrank = world.rank();
-	//	NumProcs = world.size();
-	////  MPI_Init (&argc, &argv);
-	////  MPI_Comm_rank(MPI_COMM_WORLD, &myrank);
-	////  MPI_Comm_size(MPI_COMM_WORLD, &NumProcs);
-	//
-	//  if (NumProcs<2) {
-	//    printf("At least 2 processes are required\n");
-	//    exit(-1);
-	//  }
-	//
-	//
-	//  // Initialize distance matrix. Ususally done by one process
-	//  // and bcast, or initialized from a file in a shared file system.
-	//  Fill_Dist();  // process 0 read the data and broadcast it to the others
-	//
-	////  if (myrank==0)
-	////    Coordinator();
-	////  else
-	////    Worker();
-	//
-	//  if (myrank == 0) {
-	//	  GACoordinator coordinator = GACoordinator(NumCities, Dist, 20);
-	//	  printf("coordinator starting \n");
-	//	  coordinator.start(10);
-	//	  printf("coordinator finishing\n");
-	//  } else {
-	//	  GAWorker worker = GAWorker(NumCities, Dist);
-	//	  printf("worker %d starting\n",myrank);
-	//	  worker.start();
-	//	  printf("worker %d finishing\n",myrank);
-	//  }
+		mpi::environment env(argc, argv);
+		mpi::communicator world;
+		myrank = world.rank();
+		NumProcs = world.size();
+	//  MPI_Init (&argc, &argv);
+	//  MPI_Comm_rank(MPI_COMM_WORLD, &myrank);
+	//  MPI_Comm_size(MPI_COMM_WORLD, &NumProcs);
 
+	  if (NumProcs<2) {
+	    printf("At least 2 processes are required\n");
+	    exit(-1);
+	  }
 
-	//Requester
-	string webServerAddress = "146.141.125.129";
-	Requester myRequester(webServerAddress);
-	myRequester.connectToWebServer();
+	  vector<vector<unsigned int> > distanceMatrix;
 
-	//Extractor
-	DataExtractor myExtractor;
-	myExtractor.parseDataFromFile();
-	RequestData myTSPData = myExtractor.constructTSPData();
-	// For the algorithm
-	vector<vector<unsigned int> > distanceMatrix(myTSPData.getDistanceMatrix());
+	  vector<string> cityNames;
 
-	//-------Algorithm-------
-	vector<unsigned int> bestRoute; // Starts at 0 being the first city in the distance matrix
-	bestRoute.push_back(0);
-	bestRoute.push_back(2);
-	bestRoute.push_back(1);
-	bestRoute.push_back(3);
-	unsigned int optimalPathLength = 764;
-	//-----------------------
+	  if (myrank == 0) {
+			//Requester
+			string webServerAddress = "146.141.125.129";
+			Requester myRequester(webServerAddress);
+			myRequester.connectToWebServer();
 
-	//Generator result
-	vector<unsigned int> route;
-	ResultGenerator myGenerator(optimalPathLength, myTSPData.getCityNames());
-	myGenerator.setRoute(bestRoute);
-//	myGenerator.constructJSONSwebServerAddresstream();
-	myGenerator.constructJSONStream();
-	myGenerator.createJSONFile();
+			//Extractor
+			DataExtractor myExtractor;
+			myExtractor.parseDataFromFile();
+			RequestData myTSPData = myExtractor.constructTSPData();
+			// For the algorithm
+			distanceMatrix = myTSPData.getDistanceMatrix();
+			cityNames = myTSPData.getCityNames();
+	  }
+	  // Initialize distance matrix. Ususally done by one process
+	  // and bcast, or initialized from a file in a shared file system.
+	  Fill_Dist_Vect(distanceMatrix);  // process 0 read the data and broadcast it to the others
 
-	//Send the result to the Web-server
-	DataSender mySender("146.141.125.129");
-	mySender.makeRequest();
+	//  if (myrank==0)
+	//    Coordinator();
+	//  else
+	//    Worker();
+
+	  if (myrank == 0) {
+
+		  GACoordinator coordinator = GACoordinator(NumCities, Dist, 20);
+		  printf("coordinator starting \n");
+		  coordinator.start(10);
+		  printf("coordinator finishing\n");
+
+		  	//-------Algorithm-------
+//		  	vector<unsigned int> bestRoute; // Starts at 0 being the first city in the distance matrix
+		  	GAPath resultPath = coordinator.getShortesPath();
+		  	vector<unsigned int> bestRoute = resultPath.path;
+//		  	bestRoute.push_back(0);
+//		  	bestRoute.push_back(2);
+//		  	bestRoute.push_back(1);
+//		  	bestRoute.push_back(3);
+		  	unsigned int optimalPathLength = resultPath.length;
+		  	//-----------------------
+
+		  	//Generator result
+		  	vector<unsigned int> route;
+		  	ResultGenerator myGenerator(optimalPathLength, cityNames);
+		  	myGenerator.setRoute(bestRoute);
+		  //	myGenerator.constructJSONSwebServerAddresstream();
+		  	myGenerator.constructJSONStream();
+		  	myGenerator.createJSONFile();
+
+		  	//Send the result to the Web-server
+		  	DataSender mySender("146.141.125.129");
+		  	mySender.makeRequest();
+
+	  } else {
+		  GAWorker worker = GAWorker(NumCities, Dist);
+		  printf("worker %d starting\n",myrank);
+		  worker.start();
+		  printf("worker %d finishing\n",myrank);
+	  }
+
 
 	return 0;
 
