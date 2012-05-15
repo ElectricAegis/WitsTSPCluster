@@ -28,7 +28,7 @@ public:
 	}
 	//public attributes
 	int length;			// length of path
-	std::vector<int> path;
+	std::vector<unsigned int> path;
 	int numCities;
 	static bool isSeeded;
 
